@@ -43,7 +43,7 @@ risk, and surfaces the 3 things I should actually do this week.
 ## What it does
 
 - **Scrapes Chase Card Benefits** through your logged-in Chrome session via
-  [`chrome-agent`](https://github.com/Conduktor/chrome-agent) — no third-party
+  [`chrome-agent`](https://github.com/sderosiaux/chrome-agent) — no third-party
   data aggregator, no credentials shared, all local.
 - **Tracks four independent clocks** (anniversary / calendar / monthly /
   limited-time) so credits that reset on different schedules don't get confused.
