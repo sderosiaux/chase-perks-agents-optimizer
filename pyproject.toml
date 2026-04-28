@@ -1,0 +1,88 @@
+[project]
+name = "chase-agent"
+version = "0.1.0"
+description = "Personal Chase Sapphire Reserve perks optimizer"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "jinja2>=3.1",
+    "pydantic>=2.9",
+    "typer>=0.15",
+    "rich>=13.9",
+    "anthropic>=0.40",
+    "python-dateutil>=2.9",
+    "platformdirs>=4.3",
+]
+
+[project.scripts]
+chase-agent = "chase_agent.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["chase_agent"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",       # pycodestyle errors/warnings, pyflakes
+    "I",                  # isort
+    "N",                  # naming
+    "UP",                 # pyupgrade
+    "B",                  # bugbear
+    "SIM",                # simplify
+    "C4",                 # comprehensions
+    "PIE",                # misc
+    "PT",                 # pytest
+    "RET",                # return
+    "RSE",                # raise
+    "TID",                # tidy imports
+    "TCH",                # type-checking
+    "ARG",                # unused arguments
+    "PTH",                # use pathlib
+    "PL",                 # pylint
+    "RUF",                # ruff-specific
+    "ASYNC",              # async best practices
+    "S",                  # security (bandit)
+]
+ignore = [
+    "PLR0913",            # too many arguments
+    "PLR2004",            # magic value comparison
+    "S101",               # assert ok in tests
+    "RET504",             # unnecessary assignment before return (readability)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "PLR"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_ignores = true
+show_error_codes = true
+pretty = true
+files = ["chase_agent"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["anthropic.*", "platformdirs.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --tb=short"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.2",
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.12",
+]

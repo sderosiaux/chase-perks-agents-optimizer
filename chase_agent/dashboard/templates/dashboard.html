@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set v = view %}
+
+{# ---------- Header ---------- #}
+<header class="mb-10">
+  <div class="flex items-baseline justify-between mb-3">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Chase Sapphire Reserve</h1>
+      <p class="text-sm text-ink-muted mt-1">
+        {{ v.today.isoformat() }}
+        {% if v.last_scrape_iso %}
+          · last scrape {{ v.last_scrape_iso }}
+        {% else %}
+          · no scrape yet
+        {% endif %}
+        · {{ v.next_scrape_hint }}
+      </p>
+    </div>
+    <button
+      class="px-3 py-1.5 text-sm rounded-md border border-border bg-surface hover:bg-bg transition"
+      hx-post="/api/scrape" hx-swap="none">
+      Re-scrape
+    </button>
+  </div>
+
+  <div class="bg-surface border border-border rounded-xl p-5 shadow-card">
+    <div class="flex items-baseline justify-between mb-3">
+      <div>
+        <span class="text-sm text-ink-muted">Annual fee captured</span>
+        <span class="ml-2 text-2xl font-semibold">${{ '{:.0f}'.format(v.captured_usd) }}</span>
+        <span class="text-ink-muted">/ ${{ '{:.0f}'.format(v.annual_fee) }}</span>
+      </div>
+      <span class="text-sm font-medium
+        {% if v.captured_pct >= 100 %}text-healthy
+        {% elif v.captured_pct >= 50 %}text-ink
+        {% else %}text-urgent{% endif %}">
+        {{ '{:.0f}'.format(v.captured_pct) }}%
+      </span>
+    </div>
+    <div class="h-2 bg-bg rounded-full overflow-hidden">
+      <div
+        class="h-full
+          {% if v.captured_pct >= 100 %}bg-healthy
+          {% elif v.captured_pct >= 50 %}bg-accent
+          {% else %}bg-urgent{% endif %}"
+        style="width: {{ [v.captured_pct, 100] | min }}%"></div>
+    </div>
+  </div>
+</header>
+
+{# ---------- Three clocks ---------- #}
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+  {% for clock in v.clocks %}
+    <div class="bg-surface border border-border rounded-xl p-5 shadow-card">
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted">
+          {{ clock.label }}
+        </h2>
+      </div>
+      {% if clock.perks %}
+        <ul class="space-y-3">
+          {% for p in clock.perks %}
+            <li>
+              <div class="flex items-baseline justify-between text-sm mb-1.5">
+                <span class="font-medium truncate">{{ p.name }}</span>
+                <span class="text-ink-muted ml-3 whitespace-nowrap">
+                  ${{ '{:.0f}'.format(p.used_usd) }} / ${{ '{:.0f}'.format(p.total_usd) }}
+                </span>
+              </div>
+              <div class="h-1.5 bg-bg rounded-full overflow-hidden">
+                <div class="h-full bg-{{ p.status_color }}"
+                     style="width: {{ (p.fraction_used * 100) | round }}%"></div>
+              </div>
+              <div class="flex items-baseline justify-between text-xs text-ink-subtle mt-1.5">
+                <span>{{ p.days_remaining }}d left</span>
+                {% if p.deadline_iso %}
+                  <span>resets {{ p.deadline_iso }}</span>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-sm text-ink-subtle">No active credits in this clock.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</section>
+
+{# ---------- Top actions ---------- #}
+<section class="mb-8">
+  <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted mb-3">
+    Top actions this week
+  </h2>
+  {% if v.top_actions %}
+    <ol class="space-y-3">
+      {% for r in v.top_actions %}
+        <li class="bg-surface border border-border rounded-xl p-5 shadow-card">
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-baseline gap-3 flex-wrap">
+                <span class="text-base font-semibold">{{ loop.index }}. {{ r.action }}</span>
+                <span class="text-sm font-medium text-healthy">
+                  ${{ '{:.0f}'.format(r.estimated_value_usd) }}
+                </span>
+                {% if r.deadline %}
+                  <span class="text-xs text-ink-subtle">
+                    deadline {{ r.deadline.isoformat() }}
+                  </span>
+                {% endif %}
+              </div>
+              <p class="text-sm text-ink-muted mt-1.5">{{ r.reason }}</p>
+              <p class="text-sm text-ink mt-2"><span class="font-medium">Next:</span> {{ r.next_step }}</p>
+            </div>
+            <div class="ml-4 flex flex-col items-end gap-1 shrink-0">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-bg border border-border">
+                {{ r.effort }} effort
+              </span>
+              <span class="text-xs text-ink-subtle">conf {{ '{:.1f}'.format(r.confidence) }}</span>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <div class="bg-surface border border-border rounded-xl p-8 text-center shadow-card">
+      <p class="text-ink-muted">All caught up. No urgent actions this week.</p>
+    </div>
+  {% endif %}
+</section>
+
+{# ---------- Activations ---------- #}
+<section class="mb-8">
+  <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted mb-3">Activations</h2>
+  <div class="bg-surface border border-border rounded-xl divide-y divide-border shadow-card">
+    {% for a in v.activations %}
+      <div class="flex items-center justify-between px-5 py-3">
+        <div class="flex items-center gap-3 min-w-0">
+          {% if a.active %}
+            <span class="inline-block w-2 h-2 rounded-full bg-healthy"></span>
+          {% else %}
+            <span class="inline-block w-2 h-2 rounded-full bg-critical"></span>
+          {% endif %}
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate">{{ a.name }}</div>
+            {% if a.notes %}
+              <div class="text-xs text-ink-subtle truncate">{{ a.notes }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="ml-4 flex items-center gap-3 shrink-0">
+          {% if a.deadline_iso %}
+            <span class="text-xs
+              {% if a.days_remaining is not none and a.days_remaining <= 30 %}text-urgent
+              {% else %}text-ink-subtle{% endif %}">
+              {% if a.days_remaining is not none %}
+                {{ a.days_remaining }}d left
+              {% else %}
+                {{ a.deadline_iso }}
+              {% endif %}
+            </span>
+          {% endif %}
+          {% if not a.active %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-critical-soft text-critical">
+              inactive
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ---------- Limited time ---------- #}
+{% if v.limited_time %}
+  <section class="mb-8">
+    <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted mb-3">
+      Limited-time
+    </h2>
+    <div class="bg-surface border border-border rounded-xl divide-y divide-border shadow-card">
+      {% for p in v.limited_time %}
+        <div class="flex items-center justify-between px-5 py-3">
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate">{{ p.name }}</div>
+            {% if p.notes %}
+              <div class="text-xs text-ink-subtle truncate">{{ p.notes }}</div>
+            {% endif %}
+          </div>
+          <span class="ml-4 text-xs shrink-0
+            {% if p.days_remaining <= 30 %}text-urgent font-medium
+            {% else %}text-ink-subtle{% endif %}">
+            {{ p.days_remaining }}d left
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+{# ---------- Sign-up bonus ---------- #}
+{% if v.sub %}
+  <section class="mb-8">
+    <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted mb-3">Sign-up bonus</h2>
+    <div class="bg-surface border border-border rounded-xl p-5 shadow-card">
+      <div class="flex items-baseline justify-between mb-2">
+        <span class="text-base font-medium">
+          ${{ '{:.0f}'.format(v.sub.spent) }} / ${{ '{:.0f}'.format(v.sub.required) }}
+        </span>
+        <span class="text-sm
+          {% if v.sub.cleared %}text-healthy
+          {% elif v.sub.on_pace %}text-healthy
+          {% else %}text-urgent{% endif %}">
+          {% if v.sub.cleared %}Cleared
+          {% elif v.sub.on_pace %}On pace
+          {% else %}Behind pace{% endif %}
+        </span>
+      </div>
+      <div class="h-2 bg-bg rounded-full overflow-hidden mb-2">
+        <div class="h-full bg-accent"
+             style="width: {{ ((v.sub.spent / v.sub.required) * 100) | round }}%"></div>
+      </div>
+      <p class="text-xs text-ink-subtle">
+        Day {{ v.sub.days_elapsed }} of {{ v.sub.days_total }}
+        · {{ v.sub.remaining_days }} days remaining
+      </p>
+    </div>
+  </section>
+{% endif %}
+
+{# ---------- Ignore for now ---------- #}
+{% if v.ignored %}
+  <section class="mb-8">
+    <h2 class="text-sm font-medium uppercase tracking-wide text-ink-muted mb-3">
+      Ignore for now ({{ v.ignored | length }})
+    </h2>
+    <details class="bg-surface border border-border rounded-xl shadow-card">
+      <summary class="cursor-pointer px-5 py-3 text-sm text-ink-muted hover:text-ink select-none">
+        Show low-priority items
+      </summary>
+      <ul class="border-t border-border divide-y divide-border">
+        {% for r in v.ignored %}
+          <li class="px-5 py-3">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-sm truncate">{{ r.action }}</span>
+              <span class="text-xs text-ink-subtle whitespace-nowrap">
+                ${{ '{:.0f}'.format(r.estimated_value_usd) }}
+              </span>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </details>
+  </section>
+{% endif %}
+
+<footer class="text-xs text-ink-subtle text-center mt-12 pb-4">
+  chase-agent · all data local · no third-party tracking
+</footer>
+{% endblock %}

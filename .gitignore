@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+.env.*.local
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+snapshots/
+reports/*.md
+!reports/.gitkeep
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+.DS_Store
+node_modules/
+# IDE
+.idea/
+.vscode/
+*.swp
+# Codex / Claude session artifacts
+.claude/
+.codex/
+# Macros / OS
+Thumbs.db

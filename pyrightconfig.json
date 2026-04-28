@@ -1,0 +1,6 @@
+{
+  "include": ["chase_agent"],
+  "extraPaths": ["."],
+  "pythonVersion": "3.12",
+  "reportMissingTypeStubs": false
+}
